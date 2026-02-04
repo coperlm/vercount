@@ -17,7 +17,20 @@
     }
   };
   
-  const API_URL = 'https://vercount-six.vercel.app/api/v2/log';
+  // Get API URL from script tag's data-api attribute or use default
+  const getApiUrl = () => {
+    const currentScript = document.currentScript || 
+                         document.querySelector('script[src*="client.min.js"]') ||
+                         document.querySelector('script[data-api]');
+    
+    if (currentScript && currentScript.dataset.api) {
+      return currentScript.dataset.api;
+    }
+    
+    return 'https://vercount-six.vercel.app/api/v2/log';
+  };
+  
+  const API_URL = getApiUrl();
   const CACHE_KEY = 'visitorCountData';
   const REQUEST_TIMEOUT = 5000; // 5 seconds
 
