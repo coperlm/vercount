@@ -17,7 +17,7 @@
     }
   };
   
-  const API_URL = 'https://events.vercount-six.vercel.app/api/v2/log';
+  const API_URL = 'https://vercount-six.vercel.app/api/v2/log';
   const CACHE_KEY = 'visitorCountData';
   const REQUEST_TIMEOUT = 5000; // 5 seconds
 
