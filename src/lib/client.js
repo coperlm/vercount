@@ -27,7 +27,7 @@
       return currentScript.dataset.api;
     }
     
-    return 'https://vercount-six.vercel.app/api/v2/log';
+    return 'https://vercount-five.vercel.app/api/v2/log';
   };
   
   const API_URL = getApiUrl();

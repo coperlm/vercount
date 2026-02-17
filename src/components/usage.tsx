@@ -40,7 +40,7 @@ export default function Usage() {
                       </div>
                       <p className="text-zinc-400">添加以下 HTML 代码</p>
                       <CodeBlockWithHighlight 
-                        code={`<script defer src="https://vercount-six.vercel.app/js"></script>`}
+                        code={`<script defer src="https://vercount-five.vercel.app/js"></script>`}
                         language="html"
                       />
                     </div>
