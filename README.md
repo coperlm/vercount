@@ -55,6 +55,12 @@ Vercount 旨在解决这些问题，让网站计数器更快、更稳定、更�
 本站总访客数 <span id="vercount_value_site_uv">Loading</span> 人
 ```
 
+## 导出每日文章访客
+
+如果你需要导出某个域名下每篇文章的每日 PV / UV，请看详细文档：
+
+- [导出每日文章访客文档](docs/export-daily-visitors.md)
+
 ## 从不蒜子切换到 Vercount
 
 只需替换不蒜子的 script 标签，其他保持不变，Vercount 兼容 Busuanzi 的 span 标签。数据会在首次访问时自动同步。

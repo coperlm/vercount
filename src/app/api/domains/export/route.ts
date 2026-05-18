@@ -1,11 +1,7 @@
 import { NextRequest } from "next/server";
-import { getServerSession } from "@/lib/auth";
-import { db } from "@/db";
-import { domains } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
-import { successResponse, ApiErrors } from "@/lib/api-response";
+import { ApiErrors } from "@/lib/api-response";
 
 function parseDateInput(input?: string | null) {
   if (!input) return null;
@@ -41,12 +37,6 @@ function csvEscape(field: string | number) {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session || !session.user) return ApiErrors.unauthorized();
-
-    const userId = session.user.id;
-    if (!userId) return ApiErrors.badRequest("User ID not found in session");
-
     const url = new URL(req.url);
     const domainName = url.searchParams.get('domain');
     const startParam = url.searchParams.get('start');
@@ -54,11 +44,8 @@ export async function GET(req: NextRequest) {
 
     if (!domainName) return ApiErrors.badRequest('domain is required');
 
-    // Verify domain belongs to user
-    const domain = await db.query.domains.findFirst({
-      where: and(eq(domains.name, domainName), eq(domains.userId, userId)),
-    });
-    if (!domain) return ApiErrors.notFound('Domain not found or does not belong to you');
+    // Normalize domain (remove protocol, path, port)
+    const normalizedDomain = domainName.replace(/^(https?:\/\/)/i, '').replace(/\/+$/, '').split('/')[0].split(':')[0].toLowerCase();
 
     // Determine date range
     const endDate = parseDateInput(endParam) || new Date();
@@ -68,7 +55,6 @@ export async function GET(req: NextRequest) {
     const dates = getDatesBetween(startDate, endDate);
 
     // Fetch all page keys and filter out per-day keys
-    const normalizedDomain = domain.name;
     const prefix = `pv:page:${normalizedDomain}:`;
     const keys = await kv.keys(`${prefix}*`);
 
