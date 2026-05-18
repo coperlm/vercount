@@ -9,6 +9,15 @@ import {
 // Constants
 export const EXPIRATION_TIME = 60 * 60 * 24 * 30 * 3; // 3 months in seconds
 
+// Helper: Get local date string (YYYY-MM-DD) in server timezone, not UTC
+function getLocalDateString(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // Types
 export interface SanitizedUrl {
   host: string;
@@ -228,7 +237,7 @@ export async function incrementPagePV(host: string, path: string): Promise<numbe
       kv.incr(pageKey),
       // also increment today's page PV for timeseries
       (async () => {
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const today = getLocalDateString();
         const dailyKey = `pv:page:${hostSanitized}:${pathSanitized}:${today}`;
         await Promise.all([kv.incr(dailyKey), kv.expire(dailyKey, EXPIRATION_TIME)]);
       })(),
@@ -263,7 +272,7 @@ export async function recordPageUV(host: string, path: string, ip: string): Prom
     const pageKey = `uv:page:${hostSanitized}:${pathSanitized}`;
 
     // Add IP to the page-level set and to today's daily set
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = getLocalDateString();
     const dailyKey = `uv:page:${hostSanitized}:${pathSanitized}:${today}`;
 
     const [, setCount] = await Promise.all([
@@ -311,7 +320,7 @@ export async function incrementSitePV(host: string): Promise<number> {
       kv.incr(siteKey),
       // also increment today's site PV for timeseries
       (async () => {
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const today = getLocalDateString();
         const dailyKey = `pv:site:${hostSanitized}:${today}`;
         await Promise.all([kv.incr(dailyKey), kv.expire(dailyKey, EXPIRATION_TIME)]);
       })(),
@@ -349,7 +358,7 @@ export async function recordSiteUV(host: string, ip: string): Promise<number> {
     logger.debug(`Updating site UV for host: https://${hostSanitized}`);
     const siteKey = `uv:site:${hostSanitized}`;
     // Add IP to the set and to today's daily set, then calculate total
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = getLocalDateString();
     const dailyKey = `uv:site:${hostSanitized}:${today}`;
 
     const [, , totalUVresult] = await Promise.all([

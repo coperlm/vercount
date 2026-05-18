@@ -42,3 +42,7 @@ next-env.d.ts
 *.log
 
 .idea/
+
+# build artifacts
+/public/js/
+/src/lib/client.build.js
