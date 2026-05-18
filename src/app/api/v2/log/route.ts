@@ -6,6 +6,7 @@ import {
   incrementPagePV,
   incrementSitePV,
   recordSiteUV,
+  recordPageUV,
 } from "@/utils/counter";
 import logger from "@/lib/logger";
 import { NextRequest } from "next/server";
@@ -168,10 +169,11 @@ export async function POST(req: NextRequest) {
   ];
 
   // Update counts
-  const [siteUV, sitePV, pagePV] = await Promise.all([
+  const [siteUV, sitePV, pagePV, pageUV] = await Promise.all([
     recordSiteUV(host, clientHost),
     incrementSitePV(host),
     incrementPagePV(host, path),
+    recordPageUV(host, path, clientHost),
   ]);
 
   logger.info(`Data updated`, {
@@ -180,12 +182,14 @@ export async function POST(req: NextRequest) {
     siteUV,
     sitePV,
     pagePV,
+    pageUV,
   });
 
   return successResponse({
     site_uv: siteUV,
     site_pv: sitePV,
     page_pv: pagePV,
+    page_uv: pageUV,
   }, "Data updated successfully");
 }
 

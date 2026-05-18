@@ -226,6 +226,12 @@ export async function incrementPagePV(host: string, path: string): Promise<numbe
 
     const [pagePV] = await Promise.all([
       kv.incr(pageKey),
+      // also increment today's page PV for timeseries
+      (async () => {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const dailyKey = `pv:page:${hostSanitized}:${pathSanitized}:${today}`;
+        await Promise.all([kv.incr(dailyKey), kv.expire(dailyKey, EXPIRATION_TIME)]);
+      })(),
       kv.expire(pageKey, EXPIRATION_TIME),
     ]);
 
@@ -236,6 +242,46 @@ export async function incrementPagePV(host: string, path: string): Promise<numbe
     return Number(pagePV);
   } catch (error) {
     logger.error(`Error updating page PV: ${error}`);
+    return 0;
+  }
+}
+
+/**
+ * Record a unique visitor for a specific page (per-page UV)
+ * @param host The hostname
+ * @param path The page path
+ * @param ip The visitor's IP address
+ * @returns The updated unique visitor count for the page
+ */
+export async function recordPageUV(host: string, path: string, ip: string): Promise<number> {
+  try {
+    const sanitized = sanitizeUrlPath(host, path);
+    const hostSanitized = sanitized.host;
+    const pathSanitized = sanitized.path;
+
+    logger.debug(`Updating page UV for host: https://${hostSanitized}${pathSanitized}`);
+    const pageKey = `uv:page:${hostSanitized}:${pathSanitized}`;
+
+    // Add IP to the page-level set and to today's daily set
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const dailyKey = `uv:page:${hostSanitized}:${pathSanitized}:${today}`;
+
+    const [, setCount] = await Promise.all([
+      kv.sadd(pageKey, ip),
+      kv.sadd(dailyKey, ip),
+      kv.expire(pageKey, EXPIRATION_TIME),
+      kv.expire(dailyKey, EXPIRATION_TIME),
+    ]);
+
+    const total = Number(await kv.scard(pageKey) || 0);
+
+    logger.debug(
+      `Page UV updated for host: https://${hostSanitized}${pathSanitized}, page_uv_set: ${total}`
+    );
+
+    return total;
+  } catch (error) {
+    logger.error(`Error updating page UV: ${error}`);
     return 0;
   }
 }
@@ -263,6 +309,12 @@ export async function incrementSitePV(host: string): Promise<number> {
 
     const [sitePV] = await Promise.all([
       kv.incr(siteKey),
+      // also increment today's site PV for timeseries
+      (async () => {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const dailyKey = `pv:site:${hostSanitized}:${today}`;
+        await Promise.all([kv.incr(dailyKey), kv.expire(dailyKey, EXPIRATION_TIME)]);
+      })(),
       kv.expire(siteKey, EXPIRATION_TIME),
     ]);
 
@@ -296,13 +348,17 @@ export async function recordSiteUV(host: string, ip: string): Promise<number> {
     
     logger.debug(`Updating site UV for host: https://${hostSanitized}`);
     const siteKey = `uv:site:${hostSanitized}`;
+    // Add IP to the set and to today's daily set, then calculate total
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const dailyKey = `uv:site:${hostSanitized}:${today}`;
 
-    // Add IP to the set and calculate total
     const [, totalUVresult] = await Promise.all([
       kv.sadd(siteKey, ip),
+      kv.sadd(dailyKey, ip),
       calculateTotalUV(hostSanitized),
       kv.expire(siteKey, EXPIRATION_TIME),
       kv.expire(baselineKey, EXPIRATION_TIME),
+      kv.expire(dailyKey, EXPIRATION_TIME),
     ]);
     
     // Calculate total UV using the utility function
