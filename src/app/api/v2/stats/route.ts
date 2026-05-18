@@ -5,7 +5,7 @@ import logger from "@/lib/logger";
 import { successResponse, errorResponse, ApiErrors } from "@/lib/api-response";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-function parseDateInput(input?: string) {
+function parseDateInput(input?: string | null) {
   if (!input) return null;
   const d = new Date(input);
   if (isNaN(d.getTime())) return null;

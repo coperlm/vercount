@@ -352,7 +352,7 @@ export async function recordSiteUV(host: string, ip: string): Promise<number> {
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const dailyKey = `uv:site:${hostSanitized}:${today}`;
 
-    const [, totalUVresult] = await Promise.all([
+    const [, , totalUVresult] = await Promise.all([
       kv.sadd(siteKey, ip),
       kv.sadd(dailyKey, ip),
       calculateTotalUV(hostSanitized),
