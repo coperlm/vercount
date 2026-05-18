@@ -291,8 +291,9 @@ export const domainService = {
       // Combine the set cardinality with the baseline
       const siteUv = Number(siteUvSetCount || 0) + Number(siteUvAdjust || 0);
       
-      // Get all page keys directly from Redis
-      const pageKeys = await kv.keys(`pv:page:${normalizedDomain}:*`);
+      // Get all page keys directly from Redis (exclude per-day keys like :YYYY-MM-DD)
+      const allKeys = await kv.keys(`pv:page:${normalizedDomain}:*`);
+      const pageKeys = (allKeys || []).filter((k: string) => !/:\d{4}-\d{2}-\d{2}$/.test(k));
       
       // If no page keys, return early with empty pageViews
       if (pageKeys.length === 0) {

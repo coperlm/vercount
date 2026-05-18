@@ -43,9 +43,12 @@ export async function GET(req: NextRequest) {
     const pattern = `pv:page:${hostSanitized}:*`;
     
     const keys = await kv.keys(pattern);
-    
+
+    // Filter out per-day keys (pv:page:domain:/path:YYYY-MM-DD)
+    const pageKeys = (keys || []).filter((k: string) => !/:\d{4}-\d{2}-\d{2}$/.test(k));
+
     // Extract paths from keys
-    const paths = keys.map(key => {
+    const paths = pageKeys.map(key => {
       // Format is pv:page:domain.com:/path
       const parts = key.split(':');
       return parts.slice(3).join(':'); // Join in case path contains colons
